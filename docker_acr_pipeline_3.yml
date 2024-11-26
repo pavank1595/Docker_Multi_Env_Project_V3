@@ -5,6 +5,14 @@ pool:
   demands:
     - Agent.Name -equals linuxagent
 
+variables:
+  # Set the major version here. This remains static, and you only update the minor version.
+  MajorVersion: '1'
+  # Use the Build.Counter to auto-increment the minor version (e.g., 1.0, 1.1, 1.2, etc.)
+  MinorVersion: $[counter(variables['Build.SourceBranchName'], 1)]
+  # Construct the full version tag as `MajorVersion.MinorVersion`
+  VersionTag: "$(MajorVersion).$(MinorVersion)"
+
 stages:
 - stage: Build_and_Push_DockerImage
   jobs:
@@ -28,5 +36,5 @@ stages:
         command: 'buildAndPush'
         Dockerfile: '/home/devopsdockeruser/dotnet_code/Dockerfile'
         buildContext: '/home/devopsdockeruser/dotnet_code/'
-        tags: '1.0'
+        tags: $(VersionTag)
         
