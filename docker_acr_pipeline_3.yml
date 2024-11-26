@@ -1,7 +1,4 @@
-trigger:
-  branches:
-    include:
-      - master
+trigger: none
 
 pool:
   name: "linuxpool"
@@ -31,5 +28,5 @@ stages:
         command: 'buildAndPush'
         Dockerfile: '/home/devopsdockeruser/dotnet_code/Dockerfile'
         buildContext: '/home/devopsdockeruser/dotnet_code/'
-        tags: $(VersionTag)
+        tags: 'v1.0'
         
