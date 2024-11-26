@@ -1,0 +1,99 @@
+trigger: none
+
+pool:
+  name: "linuxpool"
+  demands:
+    - Agent.Name -equals linuxagent
+
+stages:
+- stage: Build_and_Push
+  jobs:
+
+  - job: CopyFiles
+    displayName: "Copy Files From Default Location"
+    steps:
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: "/home/devopsdockeruser/vsts-agent/_work/1/s/"
+        Contents: '**' 
+        TargetFolder: "/home/devopsdockeruser/dotnet_code"
+
+  - job: BuildDockerfile
+    displayName: "Build Dockerfile"
+    dependsOn: CopyFiles
+    steps:
+    - task: DockerCompose@1
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'devops-azure-connection'
+        azureContainerRegistry: '{"loginServer":"prkappreg.azurecr.io", "id" : "/subscriptions/315346d8-947a-4fa6-85ba-e2a58ea2f051/resourceGroups/rg-acr/providers/Microsoft.ContainerRegistry/registries/prkapp"}'
+        dockerComposeFile: '/home/devopsdockeruser/dotnet_code/docker-compose.yml'
+        projectName: "prkapp"
+        action: 'Run a Docker Compose command'
+        dockerComposeCommand: 'build'
+
+  - job: PushDockerImage
+    displayName: "Push Docker Image to ACR"
+    dependsOn: BuildDockerfile
+    steps:
+    - task: DockerCompose@1
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'devops-azure-connection'
+        azureContainerRegistry: '{"loginServer":"prkappreg.azurecr.io", "id" : "/subscriptions/315346d8-947a-4fa6-85ba-e2a58ea2f051/resourceGroups/rg-acr/providers/Microsoft.ContainerRegistry/registries/prkapp"}'
+        dockerComposeFile: '/home/devopsdockeruser/dotnet_code/docker-compose.yml'
+        projectName: 'prkapp'
+        action: 'Run a Docker Compose command'
+        dockerComposeCommand: 'push'
+
+- stage: Send_Docker_Compose_Files
+  jobs:
+
+  - job: SendFiles
+    displayName: "Send Files to Destination Docker Hosts"
+    steps:
+      - task: CopyFilesOverSSH@0
+        displayName: "Send compose file to Dev"
+        inputs:
+          sshEndpoint: 'dev-docker-connection'
+          sourceFolder: '/home/devopsdockeruser/dotnet_code'
+          contents: 'dev-docker-compose.yml'
+          targetFolder: '/home/devdockeruser/docker_compose_files'
+          readyTimeout: '20000'
+
+      - task: CopyFilesOverSSH@0
+        displayName: "Send compose file to Test"
+        inputs:
+          sshEndpoint: 'test-docker-connection'
+          sourceFolder: '/home/devopsdockeruser/dotnet_code'
+          contents: 'test-docker-compose.yml'
+          targetFolder: '/home/testdockeruser/docker_compose_files'
+          readyTimeout: '20000'
+
+- stage: Run_Containers
+  jobs:
+
+  - job: RunDevContainer
+    displayName: "Run Dev Container"
+    steps:
+    - task: SSH@0
+      displayName: "Run Dev Container"
+      inputs:
+        sshEndpoint: 'dev-docker-connection'
+        runOptions: 'inline'
+        inline: |
+          docker compose -f /home/devdockeruser/docker_compose_files/dev-docker-compose.yml up -d
+        readyTimeout: '20000'
+  
+  - job: RunTestContainer
+    displayName: "Run Test Container"
+    steps:
+    - task: SSH@0
+      displayName: "Run Test Container"
+      inputs:
+        sshEndpoint: 'test-docker-connection'
+        runOptions: 'inline'
+        inline: |
+          docker compose -f /home/testdockeruser/docker_compose_files/test-docker-compose.yml up -d
+        readyTimeout: '20000'
+

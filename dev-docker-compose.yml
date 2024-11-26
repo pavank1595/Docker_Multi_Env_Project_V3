@@ -1,0 +1,18 @@
+services:
+  web:
+    image: prkappreg.azurecr.io/prkapp/sampleapp:v1.0
+    container_name: dev_app_container
+    ports:
+      - 8080:80
+    networks:
+      - dev_frontend_network
+
+networks:
+  dev_frontend_network:
+    name: dev_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.40.0.0/16
+          ip_range: 10.40.1.0/24
