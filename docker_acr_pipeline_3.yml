@@ -1,0 +1,30 @@
+trigger: none
+
+pool:
+  name: "linuxpool"
+  demands:
+    - Agent.Name -equals linuxagent
+
+stages:
+- stage: Build_and_Push_DockerImage
+  jobs:
+
+  - job: CopyFiles
+    displayName: "Copy Files From Default Location"
+    steps:
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: "/home/devopsdockeruser/vsts-agent/_work/1/s/"
+        Contents: '**' 
+        TargetFolder: "/home/devopsdockeruser/dotnet_code"
+        
+  - job: BuildAndPush
+    displayName: "Build and Push Docker Image"
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'devops-acr-connection'
+        repository: 'prkappreg'
+        command: 'buildAndPush'
+        Dockerfile: 'home/devopsdockeruser/dotnet_code/Dockerfile'
+        buildContext: 'home/devopsdockeruser/dotnet_code/'
