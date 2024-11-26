@@ -24,8 +24,9 @@ stages:
     - task: Docker@2
       inputs:
         containerRegistry: 'devops-acr-connection'
-        repository: 'prkappreg'
+        repository: 'prkapp'
         command: 'buildAndPush'
         Dockerfile: '/home/devopsdockeruser/dotnet_code/Dockerfile'
         buildContext: '/home/devopsdockeruser/dotnet_code/'
+        tags: '1.0'
         
