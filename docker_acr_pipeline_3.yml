@@ -26,5 +26,6 @@ stages:
         containerRegistry: 'devops-acr-connection'
         repository: 'prkappreg'
         command: 'buildAndPush'
-        Dockerfile: 'home/devopsdockeruser/dotnet_code/Dockerfile'
-        buildContext: 'home/devopsdockeruser/dotnet_code/'
+        Dockerfile: '/home/devopsdockeruser/dotnet_code/Dockerfile'
+        buildContext: '/home/devopsdockeruser/dotnet_code/'
+        
